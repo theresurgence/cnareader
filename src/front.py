@@ -1,6 +1,7 @@
 import curses
 import os
 import textwrap
+import time
 
 from src.back import file_age_hours, write_to_file, get_request, parse_rss, parse_article, wrap_article
 # TODO: implement cache functionality in temporary files
@@ -69,6 +70,12 @@ def get_str_max_len(items):
         if len(i) > max_len:
             max_len = len(i)
     return max_len
+
+
+def get_rss_last_refresh_time(path):
+    mod_time = os.path.getmtime(path)
+    time_list = time.ctime(mod_time).split()
+    return ' '.join(time_list[:-1])
 
 
 def print_network_error(screen):
@@ -228,6 +235,13 @@ def print_headlines(screen, option, ks_parser):
         h, w = screen.getmaxyx()
         try:
             screen.addstr(0, 0, f'h: {h} w: {w} pos:{select_pos}')
+
+            rss_last_refresh_time = get_rss_last_refresh_time(rss_cache_path)
+            last_refresh_text = f'Last Refreshed: {rss_last_refresh_time}'
+            refresh_w = w - len(last_refresh_text) - 1
+
+            screen.addstr(0, refresh_w, last_refresh_text)
+
             max_len_options = int(w // 1.2)
             # max_len_options = get_str_max_len(headlines)
 
