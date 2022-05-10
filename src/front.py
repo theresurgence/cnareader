@@ -1,5 +1,6 @@
 import curses
 import os
+import tempfile
 import textwrap
 import time
 
@@ -16,8 +17,8 @@ SPORT_URL = 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xm
 WORLD_URL = 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6311'
 
 RSS_URLS = [LATEST_NEWS_URL, BUSINESS_URL, WORLD_URL, ASIA_URL, SINGAPORE_URL, SPORT_URL]
-RSS_CACHE_PATHS = r'/tmp/latest_news.xml /tmp/business.xml /tmp/world.xml /tmp/asia.xml /tmp/singapore.xml ' \
-                  r'/tmp/sport.xml'.split(' ')
+RSS_CACHE_PATHS = r'latest_news.xml business.xml world.xml asia.xml singapore.xml ' \
+                  r'sport.xml'.split(' ')
 
 MIN_HEIGHT = 25
 MIN_WIDTH = 100
@@ -70,6 +71,11 @@ def get_str_max_len(items):
         if len(i) > max_len:
             max_len = len(i)
     return max_len
+
+
+def get_rss_cache_path(option):
+    temp_dir = tempfile.gettempdir()
+    return os.path.join(temp_dir, RSS_CACHE_PATHS[option])
 
 
 def get_rss_last_refresh_time(path):
@@ -216,7 +222,7 @@ def print_headlines(screen, option, ks_parser):
     set_page(Page.HEADLINE)
     select_pos = 0
 
-    rss_cache_path = RSS_CACHE_PATHS[option]
+    rss_cache_path = get_rss_cache_path(option)
     rss_cache_age = file_age_hours(rss_cache_path)
 
     # cache older than 1 hour or does not exist
