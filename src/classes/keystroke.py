@@ -68,19 +68,19 @@ class KeyStrokeParser:
         self.check_quit(key)
 
         # TODO max scrollable
-        if key == curses.KEY_DOWN and select_pos < 100:
+        if key == curses.KEY_DOWN and select_pos < 500:
             select_pos += 1
         elif key == curses.KEY_UP and select_pos > 0:
             select_pos -= 1
         elif key == curses.KEY_LEFT:
             front.set_page(Page.HEADLINE)
-        elif key == ord('u'):
-            text_w_ratio += 0.05
-        elif key == ord('i'):
-            text_w_ratio -= 0.05
-        elif key == ord('o'):
-            text_h_ratio += 0.05
-        elif key == ord('p'):
-            text_h_ratio -= 0.05
+        # elif key == ord('u'):
+        #     text_w_ratio += 0.05
+        # elif key == ord('i'):
+        #     text_w_ratio -= 0.05
+        # elif key == ord('o'):
+        #     text_h_ratio += 0.05
+        # elif key == ord('p'):
+        #     text_h_ratio -= 0.05
 
         return select_pos, text_w_ratio, text_h_ratio

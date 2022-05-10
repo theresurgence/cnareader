@@ -1,5 +1,6 @@
 import curses
 import os
+import sys
 import tempfile
 import textwrap
 import time
@@ -37,6 +38,16 @@ TITLE = [
     r"  \▓▓▓▓▓▓ \▓▓   \▓▓\▓▓   \▓▓     \▓▓   \▓▓\▓▓▓▓▓▓▓▓\▓▓   \▓▓\▓▓▓▓▓▓▓ \▓▓▓▓▓▓▓▓\▓▓   \▓▓"
 ]
 
+TITLE2 = [
+    r"██████╗███╗   ██╗ █████╗     ██████╗ ███████╗ █████╗ ██████╗ ███████╗██████╗",
+    r"██╔════╝████╗  ██║██╔══██╗    ██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔════╝██╔══██╗",
+    r"██║     ██╔██╗ ██║███████║    ██████╔╝█████╗  ███████║██║  ██║█████╗  ██████╔╝",
+    r"██║     ██║╚██╗██║██╔══██║    ██╔══██╗██╔══╝  ██╔══██║██║  ██║██╔══╝  ██╔══██╗",
+    r"╚██████╗██║ ╚████║██║  ██║    ██║  ██║███████╗██║  ██║██████╔╝███████╗██║  ██║",
+    r"╚═════╝╚═╝  ╚═══╝╚═╝  ╚═╝    ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝"
+
+]
+
 page = Page.MAIN
 
 
@@ -54,15 +65,19 @@ def set_page(new_page):
 
 
 def init_front(screen):
+    # Maximize cmd window, set optimal size
+    if sys.platform == 'win32':
+        import ctypes
+        ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 3)
+        curses.resize_term(30, 119)
+
     ks_parser = KeyStrokeParser(screen)
     curses.curs_set(0)
-    # screen.keypad(1) # TODO Need this or not
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_YELLOW)
     curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
     curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_YELLOW)
     curses.init_pair(4, curses.COLOR_WHITE, curses.COLOR_RED)
     print_main_menu(screen, ks_parser)
-    # print_article(screen, None, ks_parser)
 
 
 def get_str_max_len(items):
@@ -110,8 +125,6 @@ def check_term_size(screen, is_error, ks_parser):
 
         if h >= MIN_HEIGHT and w >= MIN_WIDTH and not is_error:
             break
-
-        # pdb.set_trace()
 
         is_error = False
         screen.erase()
@@ -217,7 +230,6 @@ def print_article(screen, url, ks_parser):
 
 # TODO print title "Category eg. Business, Latest News etc"
 # TODO Maybe have an 'r' for refresh.
-# take note of last time of refresh.... get from date/time of xml
 def print_headlines(screen, option, ks_parser):
     set_page(Page.HEADLINE)
     select_pos = 0
@@ -225,7 +237,7 @@ def print_headlines(screen, option, ks_parser):
     rss_cache_path = get_rss_cache_path(option)
     rss_cache_age = file_age_hours(rss_cache_path)
 
-    # cache older than 1 hour or does not exist
+    # Refresh cache older than 1 hour or does not exist
     if rss_cache_age > 1 or rss_cache_age == -1:
         rss_raw = get_request(RSS_URLS[option], screen)
         if rss_raw == -1:
@@ -240,7 +252,7 @@ def print_headlines(screen, option, ks_parser):
         screen.erase()
         h, w = screen.getmaxyx()
         try:
-            screen.addstr(0, 0, f'h: {h} w: {w} pos:{select_pos}')
+            # screen.addstr(0, 0, f'h: {h} w: {w} pos:{select_pos}')
 
             rss_last_refresh_time = get_rss_last_refresh_time(rss_cache_path)
             last_refresh_text = f'Last Refreshed: {rss_last_refresh_time}'
@@ -249,7 +261,6 @@ def print_headlines(screen, option, ks_parser):
             screen.addstr(0, refresh_w, last_refresh_text)
 
             max_len_options = int(w // 1.2)
-            # max_len_options = get_str_max_len(headlines)
 
             for idx, row in enumerate(headlines):
                 x = (w // 2) - (max_len_options // 2)
@@ -286,13 +297,13 @@ def print_main_menu(screen, ks_parser):
         screen.erase()
         screen.refresh()
         h, w = screen.getmaxyx()
-        screen.addstr(0, 0, f'h: {h} w: {w} pid: {os.getpid()}')
+        # screen.addstr(0, 0, f'h: {h} w: {w} pid: {os.getpid()}')
 
         try:
             # Print Title
-            max_len_title = get_str_max_len(TITLE)
-            for index, text in enumerate(TITLE):
-                screen.addstr(1 + index, w // 2 - max_len_title // 2, text)
+            max_len_title = get_str_max_len(TITLE2)
+            for index, text in enumerate(TITLE2):
+                screen.addstr(3 + index, w // 2 - max_len_title // 2, text)
 
             max_len_options = get_str_max_len(options)
             for idx, row in enumerate(options):
