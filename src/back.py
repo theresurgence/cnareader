@@ -34,8 +34,8 @@ def file_age_hours(filepath):
 
 
 def write_to_file(filepath, content):
-    with open(filepath, 'w') as outputfile:
-        outputfile.write(content)
+    with open(filepath, 'w') as outfile:
+        outfile.write(content)
 
 
 def get_request(url, screen):

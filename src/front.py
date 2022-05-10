@@ -4,7 +4,8 @@ import textwrap
 
 from src.back import file_age_hours, write_to_file, get_request, parse_rss, parse_article, wrap_article
 # TODO: implement cache functionality in temporary files
-from src.classes import KeyStrokeParser, Page
+from src.classes.keystroke import KeyStrokeParser
+from src.classes.page import Page
 
 LATEST_NEWS_URL = 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml'
 ASIA_URL = 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6511'
