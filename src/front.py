@@ -20,8 +20,8 @@ RSS_CACHE_PATHS = r'/tmp/latest_news.xml /tmp/business.xml /tmp/world.xml /tmp/a
 
 MIN_HEIGHT = 25
 MIN_WIDTH = 100
-MIN_HEIGHT = 0
-MIN_WIDTH = 0
+text_w_ratio = 1.15
+text_h_ratio = 1.3
 
 TITLE = [
     r"  ______  __    __  ______       _______  ________  ______  _______  ________ _______  ",
@@ -60,6 +60,7 @@ def init_front(screen):
     curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_YELLOW)
     curses.init_pair(4, curses.COLOR_WHITE, curses.COLOR_RED)
     print_main_menu(screen, ks_parser)
+    # print_article(screen, None, ks_parser)
 
 
 def get_str_max_len(items):
@@ -123,18 +124,20 @@ def check_term_size(screen, is_error, ks_parser):
 def print_bottom_bar(screen, h, w):
     text_list = ['q Quit', '↑ Up', '↓ Down', '← Back', '→ Enter']
     text_len = len(''.join(text_list))
-    num_spaces = (w - text_len) // 6 - 1
+    num_spaces = ((w - text_len) // 6) + 1
 
-    screen.addstr(h - 1, 0, " " * num_spaces)  # Initial Spaces
-    y_pos = num_spaces
+    y_pos = 0
     for text in text_list:
+        screen.addstr(h - 1, y_pos, " " * num_spaces)  # Initial Spaces
+        y_pos += num_spaces
         screen.addstr(h - 1, y_pos, text, curses.color_pair(2) | curses.A_BOLD)
-        screen.addstr(h - 1, y_pos + len(text), " " * num_spaces)
-        y_pos += len(text) + num_spaces
+        y_pos += len(text)
 
 
 # TODO print article date....
 def print_article(screen, url, ks_parser):
+    global text_w_ratio
+    global text_h_ratio
     set_page(Page.ARTICLE)
     select_pos = 0
 
@@ -142,36 +145,40 @@ def print_article(screen, url, ks_parser):
     if article_html == -1:
         set_page(Page.HEADLINE)
     else:
+
         title_sel, body_sel = parse_article(article_html)
         title_pad = curses.newpad(3, 200)
         body_pad = curses.newpad(400, 200)
         screen.refresh()
-        max_scroll_height = 300
 
     while page == Page.ARTICLE:
         try:
-            h, w = screen.getmaxyx()
-            text_w = w // 1.15  # TODO: variable depending on window size
-            text_h = h // 1.3
 
-            article_title, article_body_paras = wrap_article(title_sel, body_sel, text_w)
+            h, w = screen.getmaxyx()
+            text_w = w // text_w_ratio  # TODO: variable depending on window size
+            text_h = h // text_h_ratio
+
+            article_title_list, article_body_paras = wrap_article(title_sel, body_sel, text_w)
 
             screen.erase()
             screen.refresh()
-            text_top_y = int(h // 2 - text_h // 2) - 1
+            # TODO
+            # screen.addstr(0, 0, f'wr{text_w_ratio}, hr{text_h_ratio},tw{text_w}')
+            text_top_y = 1  # Where article title
             text_top_x = int(w // 2 - text_w // 2) - 1
             text_bot_y = int(h // 2 + text_h // 2) + 1
             text_bot_x = int(w // 2 + text_w // 2) + 1
 
-            title_x = int(text_w // 2 - len(article_title) // 2)
-
             body_pad.erase()
             title_pad.erase()
 
-            title_pad.addstr(0, title_x, article_title, curses.A_BOLD | curses.A_UNDERLINE)
+            for idx, art_title in enumerate(article_title_list):
+                title_x = int(text_w // 2 - len(art_title) // 2)
+                title_pad.addstr(idx, title_x, art_title, curses.A_BOLD | curses.A_UNDERLINE)
+
             title_pad.refresh(0, 0,
                               text_top_y, text_top_x,
-                              text_top_y, text_bot_x)
+                              text_top_y + 2, text_bot_x)
 
             line_num = 0
             for para in article_body_paras:
@@ -183,7 +190,7 @@ def print_article(screen, url, ks_parser):
             # max_scroll_height = line_num - (text_bot_x-text_top_x) TODO
 
             body_pad.refresh(select_pos, 0,
-                             text_top_y + 2, text_top_x,
+                             text_top_y + len(article_title_list) + 1, text_top_x,
                              text_bot_y, text_bot_x)
 
             print_bottom_bar(screen, h, w)
@@ -192,7 +199,7 @@ def print_article(screen, url, ks_parser):
             check_term_size(screen, True, ks_parser)
             continue
 
-        select_pos = ks_parser.parse_article(select_pos)
+        select_pos, text_w_ratio, text_h_ratio = ks_parser.parse_article(select_pos, text_w_ratio, text_h_ratio)
 
 
 # TODO print title "Category eg. Business, Latest News etc"
@@ -253,7 +260,6 @@ def print_headlines(screen, option, ks_parser):
 def print_main_menu(screen, ks_parser):
     options = ['1. Latest News', '2. Business', '3. World', '4. Asia', '5. Singapore', '6. Sport']
     select_pos = 0
-    key = None
 
     while True:
 

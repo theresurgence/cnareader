@@ -56,8 +56,6 @@ def parse_rss(rss_raw):
     headline_urls = []
 
     for entry in entries:
-        # consider enumerate ....
-        # TODO: truncate title
         # Scrollable box of titles
         headlines.append(entry['title'])
         headline_urls.append(entry['link'])
@@ -75,15 +73,28 @@ def parse_article(article_html):
 
 def wrap_article(title_select, body_paras_select, text_width):
     title_text = title_select[0].text.strip()
-    title = textwrap.fill(title_text, text_width)
+    title_lines = textwrap.wrap(title_text, text_width)
+
+    # TODO: wrap text evenly for title
+    match (len(title_lines)):
+        case 1:
+            art_width = text_width
+        case 2:
+            art_width = text_width // 1.1
+        case 3:
+            art_width = text_width // 1.3
+        case _:
+            art_width = text_width // 1.5
+
+    title_lines_even = textwrap.wrap(title_text, art_width)
 
     body_paras = []
     for para in body_paras_select:
         wrapped = textwrap.fill(para.text, text_width)
         body_paras.append(wrapped)
 
-    lines = []
+    body_lines = []
     for para in body_paras:
-        lines.append(para.split('\n'))
+        body_lines.append(para.split('\n'))
 
-    return title, lines
+    return title_lines_even, body_lines
