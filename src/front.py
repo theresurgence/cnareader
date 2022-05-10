@@ -1,11 +1,11 @@
 import curses
 import os
 import textwrap
-from enum import Enum
 
 from src.back import file_age_hours, write_to_file, get_request, parse_rss, parse_article, wrap_article
-
 # TODO: implement cache functionality in temporary files
+from src.classes import KeyStrokeParser, Page
+
 LATEST_NEWS_URL = 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml'
 ASIA_URL = 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6511'
 BUSINESS_URL = 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6936'
@@ -17,8 +17,8 @@ RSS_URLS = [LATEST_NEWS_URL, BUSINESS_URL, WORLD_URL, ASIA_URL, SINGAPORE_URL, S
 RSS_CACHE_PATHS = r'/tmp/latest_news.xml /tmp/business.xml /tmp/world.xml /tmp/asia.xml /tmp/singapore.xml ' \
                   r'/tmp/sport.xml'.split(' ')
 
-# MIN_HEIGHT = 25
-# MIN_WIDTH = 100
+MIN_HEIGHT = 25
+MIN_WIDTH = 100
 MIN_HEIGHT = 0
 MIN_WIDTH = 0
 
@@ -34,14 +34,20 @@ TITLE = [
     r"  \▓▓▓▓▓▓ \▓▓   \▓▓\▓▓   \▓▓     \▓▓   \▓▓\▓▓▓▓▓▓▓▓\▓▓   \▓▓\▓▓▓▓▓▓▓ \▓▓▓▓▓▓▓▓\▓▓   \▓▓"
 ]
 
-
-class Page(Enum):
-    MAIN = 0
-    HEADLINE = 1
-    ARTICLE = 2
-
-
 page = Page.MAIN
+
+
+def set_page(new_page):
+    global page
+    match new_page:
+        case Page.MAIN:
+            page = Page.MAIN
+        case Page.HEADLINE:
+            page = Page.HEADLINE
+        case Page.ARTICLE:
+            page = Page.ARTICLE
+        case _:
+            exit(0)
 
 
 def init_front(screen):
@@ -51,6 +57,7 @@ def init_front(screen):
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_YELLOW)
     curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
     curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_YELLOW)
+    curses.init_pair(4, curses.COLOR_WHITE, curses.COLOR_RED)
     print_main_menu(screen, ks_parser)
 
 
@@ -60,6 +67,23 @@ def get_str_max_len(items):
         if len(i) > max_len:
             max_len = len(i)
     return max_len
+
+
+def print_network_error(screen):
+    screen.erase()
+    h, w = screen.getmaxyx()
+
+    text = 'Network Connection Error!'
+    screen.addstr(h // 2, w // 2 - len(text) // 2, text, curses.A_BOLD)
+    screen.addstr(0, 0, " " * (w - 1), curses.color_pair(4))  # top bar
+    screen.addstr(h - 1, 0, " " * (w - 1), curses.color_pair(4))  # bottom bar
+
+    for i in range(h):
+        screen.addstr(i, 0, "  ", curses.color_pair(4))  # left bar
+        screen.addstr(i, w - 3, "  ", curses.color_pair(4))  # right bar
+    screen.refresh()
+    curses.napms(1000)
+    screen.erase()
 
 
 def check_term_size(screen, is_error, ks_parser):
@@ -95,85 +119,6 @@ def check_term_size(screen, is_error, ks_parser):
         ks_parser.check_quit(key)
 
 
-class KeyStrokeParser:
-    def __init__(self, screen):
-        self.screen = screen
-
-    def get_key(self):
-        try:
-            return self.screen.getch()
-        except KeyboardInterrupt or Exception:
-            exit(0)
-
-    def has_resize(self, key):
-        return key == curses.KEY_RESIZE
-
-    def resize(self, key):
-        if self.has_resize(key):
-            check_term_size(self.screen, is_error=False, ks_parser=self)
-
-    def check_quit(self, key):
-        if key == ord('q'):
-            exit(0)
-
-    def parse_main(self, select_pos, num_options):
-        key = self.get_key()
-        self.resize(key)
-        self.check_quit(key)
-
-        if key == curses.KEY_DOWN and select_pos < num_options - 1:
-            return select_pos + 1
-
-        if key == curses.KEY_UP and select_pos > 0:
-            return select_pos - 1
-
-        if key == curses.KEY_RIGHT:
-            print_headlines(self.screen, select_pos, self)
-
-        return select_pos
-
-    def parse_headlines(self, select_pos, num_options, url):
-        global page
-        key = self.get_key()
-        self.resize(key)
-        self.check_quit(key)
-
-        if key == curses.KEY_DOWN and select_pos < num_options - 1:
-            return select_pos + 1
-
-        if key == curses.KEY_UP and select_pos > 0:
-            return select_pos - 1
-
-        if key == curses.KEY_LEFT:
-            page = Page.MAIN
-
-        elif key == curses.KEY_RIGHT:
-            print_article(self.screen, url, self)
-
-        return select_pos
-
-    def parse_article(self, select_pos):
-        global page
-        key = self.get_key()
-        self.resize(key)
-        self.check_quit(key)
-
-        # TODO max scrollable
-        if key == curses.KEY_DOWN and select_pos < 100:
-            select_pos += 1
-        elif key == curses.KEY_UP and select_pos > 0:
-            select_pos -= 1
-        elif key == curses.KEY_LEFT:
-            page = Page.HEADLINE
-
-        return select_pos
-
-    # TODO: how avoid recursion
-    # def parse_check_term(self, key):
-    #     key = self.get_key()
-    #     if self.has_resize(key):
-
-
 def print_bottom_bar(screen, h, w):
     text_list = ['q Quit', '↑ Up', '↓ Down', '← Back', '→ Enter']
     text_len = len(''.join(text_list))
@@ -189,18 +134,18 @@ def print_bottom_bar(screen, h, w):
 
 # TODO print article date....
 def print_article(screen, url, ks_parser):
-    global page
-    page = Page.ARTICLE
+    set_page(Page.ARTICLE)
     select_pos = 0
 
-    article_html = get_request(url)
-    title_sel, body_sel = parse_article(article_html)
-
-    title_pad = curses.newpad(3, 200)
-    body_pad = curses.newpad(400, 200)
-    screen.refresh()
-
-    max_scroll_height = 300
+    article_html = get_request(url, screen)
+    if article_html == -1:
+        set_page(Page.HEADLINE)
+    else:
+        title_sel, body_sel = parse_article(article_html)
+        title_pad = curses.newpad(3, 200)
+        body_pad = curses.newpad(400, 200)
+        screen.refresh()
+        max_scroll_height = 300
 
     while page == Page.ARTICLE:
         try:
@@ -228,17 +173,17 @@ def print_article(screen, url, ks_parser):
                               text_top_y, text_bot_x)
 
             line_num = 0
-            # for para in article_body_paras:
-            #     for line in para:
-            #         body_pad.addstr(line_num, 0, line)
-            #         line_num += 1
-            #     line_num += 1
+            for para in article_body_paras:
+                for line in para:
+                    body_pad.addstr(line_num, 0, line)
+                    line_num += 1
+                line_num += 1
 
             # max_scroll_height = line_num - (text_bot_x-text_top_x) TODO
 
-            # body_pad.refresh(select_pos, 0,
-            #                  text_top_y + 2, text_top_x,
-            #                  text_bot_y, text_bot_x)
+            body_pad.refresh(select_pos, 0,
+                             text_top_y + 2, text_top_x,
+                             text_bot_y, text_bot_x)
 
             print_bottom_bar(screen, h, w)
             screen.refresh()
@@ -253,8 +198,7 @@ def print_article(screen, url, ks_parser):
 # TODO Maybe have an 'r' for refresh.
 # take note of last time of refresh.... get from date/time of xml
 def print_headlines(screen, option, ks_parser):
-    global page
-    page = Page.HEADLINE
+    set_page(Page.HEADLINE)
     select_pos = 0
 
     rss_cache_path = RSS_CACHE_PATHS[option]
@@ -262,9 +206,12 @@ def print_headlines(screen, option, ks_parser):
 
     # cache older than 1 hour or does not exist
     if rss_cache_age > 1 or rss_cache_age == -1:
-        rss_raw = get_request(RSS_URLS[option])
-        write_to_file(rss_cache_path, rss_raw)
-        headlines, headline_urls = parse_rss(rss_raw)
+        rss_raw = get_request(RSS_URLS[option], screen)
+        if rss_raw == -1:
+            set_page(Page.MAIN)
+        else:
+            write_to_file(rss_cache_path, rss_raw)
+            headlines, headline_urls = parse_rss(rss_raw)
     else:
         headlines, headline_urls = parse_rss(rss_cache_path)
 
@@ -295,12 +242,11 @@ def print_headlines(screen, option, ks_parser):
 
             print_bottom_bar(screen, h, w)
             screen.refresh()
+            select_pos = ks_parser.parse_headlines(select_pos, len(headlines), headline_urls[select_pos])
 
         except Exception:
             check_term_size(screen, True, ks_parser)
             continue
-
-        select_pos = ks_parser.parse_headlines(select_pos, len(headlines), headline_urls[select_pos])
 
 
 def print_main_menu(screen, ks_parser):
@@ -338,5 +284,4 @@ def print_main_menu(screen, ks_parser):
             check_term_size(screen, True, ks_parser)
             continue
 
-        # pdb.set_trace()
         select_pos = ks_parser.parse_main(select_pos, len(options))
