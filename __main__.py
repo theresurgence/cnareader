@@ -1,10 +1,12 @@
-import curses 
+import curses
 import sys
-from src.front import init_front, KeyStrokeParser
+
+from src.front import init_front
 
 
-def main(stdscr):
-    init_front(stdscr)
+def main(screen):
+    init_front(screen)
+
 
 if __name__ == '__main__':
     # TODO directories for RSS cache
@@ -17,4 +19,3 @@ if __name__ == '__main__':
             pass
 
     curses.wrapper(main)
-

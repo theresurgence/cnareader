@@ -25,7 +25,7 @@ def file_age_hours(filepath):
     try:
         age_seconds = time.time() - os.path.getmtime(filepath)
         return age_seconds / 3600
-    except: # filepath non-existent
+    except Exception: # filepath non-existent
         return -1
 
 def write_to_file(filepath, content):

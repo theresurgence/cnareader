@@ -4,3 +4,4 @@ req.py
 req2.py
 __pycache__
 src/menu.py
+.idea/
