@@ -76,15 +76,14 @@ def wrap_article(title_select, body_paras_select, text_width):
     title_lines = textwrap.wrap(title_text, text_width)
 
     # TODO: wrap text evenly for title
-    match (len(title_lines)):
-        case 1:
-            art_width = text_width
-        case 2:
-            art_width = text_width // 1.1
-        case 3:
-            art_width = text_width // 1.3
-        case _:
-            art_width = text_width // 1.5
+    if len(title_lines) == 1:
+        art_width = text_width
+    elif len(title_lines) == 2:
+        art_width = text_width // 1.1
+    elif len(title_lines) == 3:
+        art_width = text_width // 1.3
+    else:
+        art_width = text_width // 1.5
 
     title_lines_even = textwrap.wrap(title_text, art_width)
 

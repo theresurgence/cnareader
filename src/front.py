@@ -53,15 +53,14 @@ page = Page.MAIN
 
 def set_page(new_page):
     global page
-    match new_page:
-        case Page.MAIN:
-            page = Page.MAIN
-        case Page.HEADLINE:
-            page = Page.HEADLINE
-        case Page.ARTICLE:
-            page = Page.ARTICLE
-        case _:
-            exit(0)
+    if new_page == Page.MAIN:
+        page = Page.MAIN
+    elif new_page == Page.HEADLINE:
+        page = Page.HEADLINE
+    elif new_page == Page.ARTICLE:
+        page = Page.ARTICLE
+    else:
+        exit(0)
 
 
 def init_front(screen):
