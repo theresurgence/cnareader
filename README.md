@@ -1,6 +1,7 @@
 # cnareader
 
-cnareader is a terminal user interface client for reading news from Channel News Asia.
+cnareader is a terminal user interface client for reading news from [Channel News Asia](https://www.channelnewsasia.com)
+.
 It aims to give users a distraction and bloat free experience.
 
 ### Main Menu
