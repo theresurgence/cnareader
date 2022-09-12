@@ -1,11 +1,19 @@
 # cnareader
 
-![Main Menu](pictures/cna-1.png)
-![Headlines](pictures/cna-2.png)
-![Article](pictures/cna-3.png)
-
 cnareader is a terminal user interface client for reading news from Channel News Asia.
 It aims to give users a distraction and bloat free experience.
+
+### Main Menu
+
+![Main Menu](pictures/cna-1.png)
+
+### Headlines
+
+![Headlines](pictures/cna-2.png)
+
+### Article
+
+![Article](pictures/cna-3.png)
 
 ## Usage
 
